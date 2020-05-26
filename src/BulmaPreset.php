@@ -4,9 +4,10 @@ namespace LaravelFrontendPresets\BulmaPreset;
 use Artisan;
 use Illuminate\Support\Arr;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Foundation\Console\Presets\Preset;
+use Laravel\Ui\UiCommand;
 
-class BulmaPreset extends Preset
+
+class BulmaPreset extends UICommand
 {
     /**
      * Install the preset.
@@ -15,8 +16,8 @@ class BulmaPreset extends Preset
      */
     public static function install($withAuth = false)
     {
-        static::updatePackages();
         static::updateSass();
+        static::updateBootstrapping();
 
         if($withAuth)
         {
@@ -27,7 +28,6 @@ class BulmaPreset extends Preset
             static::updateWelcomePage();
         }
 
-        static::removeNodeModules();
     }
 
     /**
@@ -39,8 +39,9 @@ class BulmaPreset extends Preset
     protected static function updatePackageArray(array $packages)
     {
         return [
-            'bulma' => '^0.5.2',
-        ] + Arr::except($packages, ['bootstrap-sass', 'foundation-sites', 'uikit']);
+            'bulma' => '^0.8.0',
+            'bulma-extensions' => '^6.2.7',
+        ] + Arr::except($packages, ['bootstrap']);
     }
 
     /**
@@ -51,17 +52,37 @@ class BulmaPreset extends Preset
     protected static function updateSass()
     {
         // clean up orphan files
-        $orphan_sass_files = glob(resource_path('/assets/sass/*.*'));
+        $orphan_sass_files = glob(resource_path('/sass/*.*'));
 
         foreach($orphan_sass_files as $sass_file)
         {
             (new Filesystem)->delete($sass_file);
         }
 
-        copy(__DIR__.'/bulma-stubs/initial-variables.sass', resource_path('assets/sass/initial-variables.sass'));
-        copy(__DIR__.'/bulma-stubs/bulma.sass', resource_path('assets/sass/bulma.sass'));
-        copy(__DIR__.'/bulma-stubs/app.scss', resource_path('assets/sass/app.scss'));
+        copy(__DIR__.'/bulma-stubs/initial-variables.sass', resource_path('sass/initial-variables.sass'));
+        copy(__DIR__.'/bulma-stubs/bulma.sass', resource_path('sass/bulma.sass'));
+        copy(__DIR__.'/bulma-stubs/bulma-extensions.sass', resource_path('sass/bulma-extensions.sass'));
+        copy(__DIR__.'/bulma-stubs/app.scss', resource_path('sass/app.scss'));
     }
+
+
+    /**
+     * Update the bootstrapping files.
+     *
+     * @return void
+     */
+    protected static function updateBootstrapping()
+    {
+        $file = new Filesystem;
+
+        $file->delete(resource_path('js/bootstrap.js'));
+        $file->delete(resource_path('js/app.js'));
+
+        copy(__DIR__.'/bulma-stubs/bootstrap.js', resource_path('js/bootstrap.js'));
+        copy(__DIR__.'/bulma-stubs/app.js', resource_path('js/app.js'));
+        copy(__DIR__.'/bulma-stubs/bulma-extensions.js', resource_path('js/bulma-extensions.js'));
+    }
+
 
     /**
      * Update the default welcome page file with Bulma buttons.
